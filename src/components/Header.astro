@@ -1,0 +1,181 @@
+---
+
+import { getSession  } from 'auth-astro/server';
+import  {db, like, User} from 'astro:db';
+import ChevronDown from './Icons/ChevronDown.astro'
+import { getUserByEmail } from '../utils/db';
+
+const session = await getSession(Astro.request);
+
+
+// El usuario existe?
+if (
+  session &&
+  session.user?.email &&
+  session.user?.name
+) {
+  const res = await getUserByEmail(session.user.email)
+  
+  if (
+    res.success &&
+    !res.data
+  ) {
+    await db.insert(User).values({
+      email: session.user.email,
+      name: session.user.name,
+    })
+  }
+}
+---
+
+
+<header>
+    {session
+      ? (
+        <div id="dropdown-menu">
+          <div id="dropdown-label">
+            <span>{
+              session.user?.name
+                ? session.user?.name.split(' ')[0]
+                : ''
+            }</span>
+            <span id="chevron">
+              <ChevronDown color="white" width="24" heigth="24" />
+            </span>
+          </div>
+          
+          <div id="dropdown-content">
+            <nav>
+              <ul>
+                <li>
+                  <a href="/my-urls">
+                    Ver mis URLs
+                  </a>
+                </li>
+                <li>
+                  <button id="logout">Logout</button>
+                </li>
+              </ul>
+            </nav>
+            
+          </div>
+        </div>
+      )
+      : (
+        <button id="login">Login</button>
+      )
+    }
+  </header>
+
+<style>
+    header {
+        display: flex;
+        justify-content: flex-end;
+        padding: 1rem;
+    }
+    button {
+        padding: 0.5rem 1rem;
+        border: none;
+        background-color: #333;
+        color: white;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #555;
+    }
+    button:active {
+        background-color: #777;
+    }
+    button:focus {
+        outline: none;
+    }
+    button + button {
+        margin-left: 1rem;
+    }
+</style>
+<style>
+    header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 1rem;
+    }
+  
+  
+    #login {
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+  
+    #login:hover {
+      color: gray;
+    }
+  
+    #dropdown-menu {
+      position: relative;
+    }
+  
+    #dropdown-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      width: fit-content;
+      gap: 0.2rem;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+  
+    #chevron {
+      display: flex;
+      align-items: center;
+    }
+  
+    #dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      color: black;
+      width: 150px;
+      border-radius: 3px;
+  
+      padding: 0.8rem;
+    }
+  
+    #dropdown-menu:hover #dropdown-content {
+      display: block;
+    }
+  
+    ul {
+      list-style: none;
+    }
+  
+    a {
+      text-decoration: none;
+      color: black;
+    }
+  
+    a,
+
+    a:hover,
+    button:hover {
+      color: gray;
+    }
+  </style>
+<script>
+    const { signIn, signOut } = await import("auth-astro/client")
+    
+    const login = document.querySelector("#login") as HTMLButtonElement
+  
+    if (login) {
+      login.onclick = () => signIn("github")
+    }
+  
+    const logout = document.querySelector("#logout") as HTMLButtonElement
+  
+    if (logout) {
+      logout.onclick = () => signOut()
+    }
+  </script>
